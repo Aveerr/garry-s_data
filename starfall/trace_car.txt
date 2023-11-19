@@ -1,0 +1,82 @@
+--@name trace_car
+--@author
+--@shared
+
+function pid(target, current, Kp, Ki, Kd)
+    local lastError = 0
+    local integral = 0
+    
+    local function calculateControlSignal(error)
+        local p = Kp * error
+        
+        integral = integral + error
+        
+        local i = Ki * integral
+        local d = Kd * (error - lastError)
+        local controlSignal = p + i + d
+        
+        lastError = error
+        
+        return controlSignal
+    end
+  
+    local error = target - current
+    local controlSignal = calculateControlSignal(error)
+    
+    return controlSignal 
+end
+
+local holoDir = {
+    FL = Vector( 70,-140,10),
+    FR = Vector(-70,-140,10),
+    RL = Vector( 70, 140,10),
+    RR = Vector(-70, 140,10),
+}
+
+if SERVER then
+    local chasis = prop.create(chip():getPos()+Vector(0,0,10),Angle(0,0,0),"models/hunter/blocks/cube3x6x025.mdl") 
+
+    local traceLen = 90
+
+    local h1 = hologram.create(Vector(0,0,0),Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
+    local h2 = hologram.create(Vector(0,0,0),Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
+    local h3 = hologram.create(Vector(0,0,0),Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
+    local h4 = hologram.create(Vector(0,0,0),Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
+    
+    hook.add("think", "Update", function()
+        local chasFL = chasis:localToWorld(holoDir.FL)
+        local chasFR = chasis:localToWorld(holoDir.FR)
+        local chasRL = chasis:localToWorld(holoDir.RL)
+        local chasRR = chasis:localToWorld(holoDir.RR)
+        
+        local t1 = trace.line(chasFL, chasFL - Vector(0,0,traceLen), chasis)
+        local t2 = trace.line(chasFR, chasFR - Vector(0,0,traceLen), chasis)
+        local t3 = trace.line(chasRL, chasRL - Vector(0,0,traceLen), chasis)
+        local t4 = trace.line(chasRR, chasRR - Vector(0,0,traceLen), chasis)
+        
+        h1:setPos(t1.HitPos)
+        h2:setPos(t2.HitPos)
+        h3:setPos(t3.HitPos)
+        h4:setPos(t4.HitPos)
+        
+        local t1Len = t1.StartPos.z-t1.HitPos.z
+        local t2Len = t2.StartPos.z-t2.HitPos.z
+        local t3Len = t3.StartPos.z-t3.HitPos.z
+        local t4Len = t4.StartPos.z-t4.HitPos.z
+        
+        local P = 0.2
+        local I = 0.01
+        local D = 0
+        
+        local p1 = pid(traceLen, t1Len, P, I, D) * chasis:getMass() / 4
+        local p2 = pid(traceLen, t2Len, P, I, D) * chasis:getMass() / 4
+        local p3 = pid(traceLen, t3Len, P, I, D) * chasis:getMass() / 4
+        local p4 = pid(traceLen, t4Len, P, I, D) * chasis:getMass() / 4
+
+        
+        chasis:applyForceOffset(chasis:localToWorldVector(Vector(0,0,p1)), chasFL)
+        chasis:applyForceOffset(chasis:localToWorldVector(Vector(0,0,p2)), chasFR)
+        chasis:applyForceOffset(chasis:localToWorldVector(Vector(0,0,p3)), chasRL)
+        chasis:applyForceOffset(chasis:localToWorldVector(Vector(0,0,p4)), chasRR)
+    end)
+end

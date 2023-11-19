@@ -1,0 +1,40 @@
+--@name pid
+--@author
+--@server
+
+local height = chip():getPos().z + 200
+local pidor = prop.create( chip():localToWorld( Vector( 0, 0, 100 ) ), chip():localToWorldAngles( Angle( 0, 0, 0 ) ), "models/hunter/blocks/cube1x1x025.mdl", false )
+
+
+local holo = hologram.create( Vector( chip():getPos().x, chip():getPos().y, height ), Angle(), "models/holograms/cube.mdl" )
+holo:setColor( Color( 255, 0, 0 ) )
+
+local lastError = 0
+local integral = 0
+
+function pid(target, current, Kp, Ki, Kd)
+    local function calculateControlSignal(error)
+        local p = Kp * error
+        integral = integral + error
+        local i = Ki * integral
+        local d = Kd * (error - lastError)
+        local controlSignal = p + i + d
+        lastError = error
+        return controlSignal
+    end
+  
+    local error = target - current
+    local controlSignal = calculateControlSignal(error)
+    return controlSignal * pidor:getMass()
+end
+
+
+hook.add( "think", "pidoras", function()
+    holo:setPos(Vector(pidor:getPos().x,pidor:getPos().y,height))
+    local p = pid( height, pidor:getPos().z, 0.6, 0.01, 20 )
+    print( p )
+    
+    pidor:applyForceCenter( Vector( 0, 0, p ))
+    
+    pidor:applyTorque(Vector(0,0,0))
+end )
