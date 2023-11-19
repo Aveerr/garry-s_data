@@ -1,12 +1,44 @@
 --@name gun
---@author
+--@author Aver
 --@shared
 
---[[
-Starfall Scripting Environment
+function gunFire()
+    local ownerHead = owner():lookupBone("ValveBiped.Bip01_Head1")
+    local bulletPos = owner():getBonePosition(ownerHead)
+    local bullet = hologram.create(bulletPos,Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
+    local playerEyEangles = player():getEyeAngles()
+    
+    hook.add("Tick", "s", function()
+        local v = Vector(500,0,0)
+        v:rotate(playerEyEangles)
+        bullet:setVel(v)
+        bullet:setAngles(playerEyEangles)
+    end)
+end
 
-Github: https://github.com/thegrb93/StarfallEx
-Reference Page: http://thegrb93.github.io/Starfall/
-
-Default Keyboard shortcuts: https://github.com/ajaxorg/ace/wiki/Default-Keyboard-Shortcuts
-]]
+if SERVER then
+    local h = hologram.create(Vector(0,0,0),Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
+    local f = 6
+    h:setScale(Vector(f,f,f))
+    
+    local ownerHead = owner():lookupBone("ValveBiped.Bip01_Head1")
+    local ownerHeadPos = owner():getBonePosition(ownerHead)
+    print(ownerHeadPos)
+    
+    hook.add("KeyPress", "KeyPress", function(ply, key)     
+        if isFirstTimePredicted() and key == IN_KEY.ATTACK then
+            --gunFire()
+        end
+    end)  
+    
+    hook.add("Tick", "Update", function()
+        local spos = chip():getPos()
+        spos:rotate(player():getEyeAngles())
+        
+        local epos = chip():getPos() + Vector(50,0,0)
+        epos:rotate(player():getEyeAngles())
+        
+        local t = trace.line(spos, epos,chip())
+        h:setPos(t.HitPos)
+    end)
+end
