@@ -1,44 +1,75 @@
 --@name gun
 --@author Aver
---@shared
+
+local bullets = {}
+local bulletSpeed = 8000
+local bulletScale = Vector(1, 0.3, 0.3)
 
 function gunFire()
-    local ownerHead = owner():lookupBone("ValveBiped.Bip01_Head1")
-    local bulletPos = owner():getBonePosition(ownerHead)
-    local bullet = hologram.create(bulletPos,Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
-    local playerEyEangles = player():getEyeAngles()
+    local bulletPos = owner():getEyePos() + owner():getVelocity() / 15
+    local buletAng = owner():getEyeAngles()
+    local bullet = hologram.create(bulletPos,Angle(),"models/hunter/blocks/cube025x025x025.mdl")
+    local v = Vector(bulletSpeed,0,0)
+           
+    v:rotate(buletAng)
+    bullet:setVel(v)
+    bullet:setAngles(buletAng)
+    bullet:setScale(bulletScale)   
+    table.insert(bullets, #bullets+1, bullet)
+end
+
+function updateBullets(bullets)
+    print("len"..#bullets)
     
-    hook.add("Tick", "s", function()
-        local v = Vector(500,0,0)
-        v:rotate(playerEyEangles)
-        bullet:setVel(v)
-        bullet:setAngles(playerEyEangles)
-    end)
+    for k,v in pairs(bullets) do
+         local traceFilte = {
+            bullets[k],
+            owner(), 
+        }
+        
+        local dir,traceLen,startPos,endPos,t
+        
+        if bullets[k]:isValid() and bullets[k]:getPos():isInWorld() then
+            dir = bullets[k]:getForward()
+            traceLen = 5
+            startPos = bullets[k]:getPos()
+            endPos = startPos + dir * traceLen
+            t = trace.line(startPos, endPos, traceFilte)
+            
+            if t.Hit then
+                print(bullets[k])
+                bullets[k]:remove()
+                table.remove(bullets, k)
+            end
+        else
+            print(bullets[k])
+            bullets[k]:remove()
+            table.remove(bullets, k)
+        end
+    end
 end
 
 if SERVER then
-    local h = hologram.create(Vector(0,0,0),Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
-    local f = 6
-    h:setScale(Vector(f,f,f))
+    local boneIndex = owner():lookupBone("ValveBiped.Bip01_Spine4")
+    --local gun = hologram.create(Vector(0,0,0),Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
     
-    local ownerHead = owner():lookupBone("ValveBiped.Bip01_Head1")
-    local ownerHeadPos = owner():getBonePosition(ownerHead)
-    print(ownerHeadPos)
-    
+    --gun:setScale(Vector(1,3,1))
+    --gun:setParent(owner(),1)
+
     hook.add("KeyPress", "KeyPress", function(ply, key)     
-        if isFirstTimePredicted() and key == IN_KEY.ATTACK then
-            --gunFire()
+        if isFirstTimePredicted() and key == IN_KEY.ATTACK2 then
+            gunFire()
         end
     end)  
     
+    
+
     hook.add("Tick", "Update", function()
-        local spos = chip():getPos()
-        spos:rotate(player():getEyeAngles())
+        --local bonePos, boneAng = owner():getBonePosition(boneIndex)
+        --gun:setPos(bonePos + player():getForward()*2)
+        --gun:setAngles( boneAng )
         
-        local epos = chip():getPos() + Vector(50,0,0)
-        epos:rotate(player():getEyeAngles())
+        updateBullets(bullets)
         
-        local t = trace.line(spos, epos,chip())
-        h:setPos(t.HitPos)
     end)
 end

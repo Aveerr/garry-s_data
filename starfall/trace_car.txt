@@ -35,7 +35,7 @@ local holoDir = {
 
 if SERVER then
     local chasis = prop.create(chip():getPos()+Vector(0,0,10),Angle(0,0,0),"models/hunter/blocks/cube3x6x025.mdl") 
-
+    
     local traceLen = 90
 
     local h1 = hologram.create(Vector(0,0,0),Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
@@ -43,6 +43,7 @@ if SERVER then
     local h3 = hologram.create(Vector(0,0,0),Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
     local h4 = hologram.create(Vector(0,0,0),Angle(0,0,0),"models/hunter/blocks/cube025x025x025.mdl")
     
+    chasis:setMass(2000)
     hook.add("think", "Update", function()
         local chasFL = chasis:localToWorld(holoDir.FL)
         local chasFR = chasis:localToWorld(holoDir.FR)
@@ -64,19 +65,21 @@ if SERVER then
         local t3Len = t3.StartPos.z-t3.HitPos.z
         local t4Len = t4.StartPos.z-t4.HitPos.z
         
-        local P = 0.2
-        local I = 0.01
-        local D = 0
+        local P = 500
+        local I = 32
+        local D = 700
         
-        local p1 = pid(traceLen, t1Len, P, I, D) * chasis:getMass() / 4
-        local p2 = pid(traceLen, t2Len, P, I, D) * chasis:getMass() / 4
-        local p3 = pid(traceLen, t3Len, P, I, D) * chasis:getMass() / 4
-        local p4 = pid(traceLen, t4Len, P, I, D) * chasis:getMass() / 4
+        local p1 = pid(traceLen, t1Len, P, I, D) /4
+        local p2 = pid(traceLen, t2Len, P, I, D) /4
+        local p3 = pid(traceLen, t3Len, P, I, D) /4
+        local p4 = pid(traceLen, t4Len, P, I, D) /4
 
         
         chasis:applyForceOffset(chasis:localToWorldVector(Vector(0,0,p1)), chasFL)
         chasis:applyForceOffset(chasis:localToWorldVector(Vector(0,0,p2)), chasFR)
         chasis:applyForceOffset(chasis:localToWorldVector(Vector(0,0,p3)), chasRL)
         chasis:applyForceOffset(chasis:localToWorldVector(Vector(0,0,p4)), chasRR)
+        
+        chasis:setVelocity(Vector(0,0,0))
     end)
 end
