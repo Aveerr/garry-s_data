@@ -1,0 +1,13 @@
+--@name light example
+--@author
+
+
+if CLIENT then
+   local ligh = light.create(chip():getPos(), 50, 6000, Color(255,255,25,0.01)) 
+
+    hook.add("Tick", "Update", function() 
+        ligh:draw()
+        ligh:setPos(chip():getPos())
+        ligh:setSize(4124123123123)
+    end)
+end

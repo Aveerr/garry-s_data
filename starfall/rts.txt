@@ -1,0 +1,115 @@
+--@name rts
+--@author
+
+local units = {}
+function unit(pos)
+    local unit = hologram.create(Vector(),Angle(),"models/hunter/blocks/cube025x025x025.mdl")
+    unit:setPos(pos+Vector(0,0,5))
+    unit:setMaterial("models/debug/debugwhite")
+    unit:setScale(Vector(0.7,0.7,1))
+    table.insert(units, #units+1, {
+        unit, 
+        selected=false, 
+        holoAtack=nil
+    })
+end
+        
+function intersectUnitWithZone(startPos, endPos, unit)
+    if startPos.x < endPos.x and startPos.y < endPos.y  then
+        --print('from left up corner to right down corner')  
+        return (startPos.x < unit:getPos().x and startPos.y < unit:getPos().y and unit:getPos().x < endPos.x and unit:getPos().y < endPos.y)
+    end
+    if startPos.x > endPos.x and startPos.y > endPos.y  then
+        --print('from right down corner to left up corner') 
+        return (startPos.x > unit:getPos().x and startPos.y > unit:getPos().y and unit:getPos().x > endPos.x and unit:getPos().y > endPos.y)
+    end
+    if startPos.x < endPos.x and startPos.y > endPos.y  then
+        --print('from right up corner to left down corner') 
+        return (startPos.x < unit:getPos().x and startPos.y > unit:getPos().y and unit:getPos().x < endPos.x and unit:getPos().y > endPos.y)
+    end
+    if startPos.x > endPos.x and startPos.y < endPos.y  then
+        --print('from left down corner to right up corner') 
+        return (startPos.x > unit:getPos().x and startPos.y < unit:getPos().y and unit:getPos().x > endPos.x and unit:getPos().y < endPos.y)
+    end
+end
+
+function unitSelected()
+    for key,value in pairs(units) do 
+        if value[2] then
+            value[1]:setColor(Color(0,255,0))
+        else
+            value[1]:setColor(Color(255,255,255))
+        end
+    end
+end
+
+
+if SERVER then
+    unit(chip():getPos() + Vector(0,0,0))
+    unit(chip():getPos() + Vector(50,0,0))
+    unit(chip():getPos() + Vector(50,50,0))
+    
+    local startPos = Vector()
+    local endPos = Vector()
+    local selectZone = hologram.create(Vector(),Angle(),"models/hunter/blocks/cube025x025x025.mdl")
+    local movePoint = hologram.create(Vector(),Angle(),"models/props_phx/construct/metal_angle360.mdl")
+    local check = false
+    selectZone:setMaterial("models/debug/debugwhite")
+    movePoint:setMaterial("models/debug/debugwhite")
+    movePoint:setColor(Color(255,255,0,200))
+    movePoint:setScale(Vector(0.1))
+    
+    hook.add("Think", "update", function()
+        local height = math.abs(startPos.y/12 - endPos.y/12)
+        local width = math.abs(startPos.x/12 - endPos.x/12)
+        
+        selectZone:setPos(startPos/2 + endPos/2)
+        selectZone:setScale(Vector(width, height ,0.5))
+        
+        
+        if player():keyDown(IN_KEY.USE) then 
+            if !check then
+                startPos = player():getEyeTrace().HitPos
+            end
+            check = true
+            endPos = player():getEyeTrace().HitPos
+            selectZone:setColor(Color(255,0,0,100))
+            
+            for key,value in pairs(units) do 
+                if intersectUnitWithZone(startPos, endPos, value[1]) then
+                    value[2] = true
+                else
+                    value[2] = false
+                end
+            end
+        else
+            check = false
+            selectZone:setColor(Color(0,0,0,0))
+            selectZone:setPos(Vector(0,0,0))
+        end
+        
+        
+        if player():keyDown(IN_KEY.ATTACK2) then 
+            movePoint:setPos(player():getEyeTrace().HitPos)
+            for key,value in pairs(units) do 
+                if value[2] then
+                    if value[3] == nil then
+                        value[3] = hologram.create(Vector(),Angle(),"models/hunter/blocks/cube025x025x025.mdl")
+                    end
+                    local dist = (value[1]:getPos():getDistance(movePoint:getPos()))/12
+                    value[3]:setPos(movePoint:getPos()/2 + value[1]:getPos()/2)
+                    value[3]:setScale(Vector(dist,0.1,0.1))
+                    value[3]:setColor(Color(255,255,0,200))
+                    --print((value[3]:getPos()+movePoint:getPos()):getAngle())
+                    value[3]:setAngles((value[3]:getPos()-movePoint:getPos()):getAngle())
+                else
+                    if value[3] != nil then
+                        value[3]:setScale(Vector(0,0,0))
+                    end
+                end
+            end
+        end
+        
+        unitSelected()
+    end)
+end

@@ -1,0 +1,54 @@
+--@name huesosick
+--@author
+
+local keyControl = {
+    SPACE = 2,
+    W = 8,
+    A = 512,
+    S = 16,
+    D = 1024,
+}
+
+
+if SERVER then
+    local chasis = prop.create(chip():getPos() + Vector(50,0,50), Angle(0,0,0), "models/hunter/blocks/cube075x1x075.mdl") 
+    local head = prop.create(Vector(0,0,0), Angle(0,0,0), "models/hunter/blocks/cube05x05x05.mdl")
+    
+    hook.add("Think", "Update", function() 
+        chasis:setAngles(Angle(0, owner():getEyeAngles().y, 90))
+        --owner():getEyeAngles().y
+        head:setAngles(Angle(owner():getEyeAngles().p, owner():getEyeAngles().y, 0))
+        head:setPos(chasis:getPos() + chasis:localToWorldVector(Vector(-5.5,40,5.5)))
+        
+        if owner():keyDown(IN_KEY.FORWARD) then
+           chasis:setVelocity(chasis:getForward()*23123 + Vector(1030,0,0)) 
+        end
+        if owner():keyDown(IN_KEY.FORWARD) then
+           print(12) 
+        end
+        if owner():keyDown(IN_KEY.FORWARD) then
+           print(12) 
+        end
+        if owner():keyDown(IN_KEY.FORWARD) then
+           print(12) 
+        end
+    end)
+    
+    --[[hook.add("KeyPress", "KeyReg", function(ply, key) 
+        if owner() == ply then
+            print(1)
+            if keyControl.W == key then
+                chasis:setVelocity(chasis:getForward() + Vector(100,0,0)) 
+            end
+            if keyControl.A == key then
+                print("A") 
+            end
+            if keyControl.S == key then
+                print("S") 
+            end
+            if keyControl.D == key then
+                print("D") 
+            end
+        end
+    end)]]--
+end

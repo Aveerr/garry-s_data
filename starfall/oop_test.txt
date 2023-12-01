@@ -1,0 +1,23 @@
+--@name oop_test
+--@author
+--@shared
+
+Person = {}
+
+function Person:new(fName, lName)
+    local obj = {}
+    obj.firstName = fName
+    obj.lastName = lName
+    
+    function obj:getName()
+       return self.firstName 
+    end
+    
+    setmetatable(obj, self)
+    self.__index = self
+    return obj
+end
+
+nigger = Person:new('Fuck', 'Niggers')
+
+print(nigger:getName())
